@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Admin - Stok</title>
+  <style>
+    body { font-family: system-ui; background: #f4f6f8; margin: 0; padding: 0; }
+    
+    /* LOGIN */
+    #login { display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column; }
+    .pin-input { padding: 10px; font-size: 20px; margin-top: 10px; width: 150px; text-align: center; }
+    .login-btn { padding: 10px 20px; font-size: 16px; background: #e21b70; color: white; border: none; border-radius:5px; cursor: pointer; margin-top: 15px; }
+
+    /* DASHBOARD */
+    #dashboard { max-width: 900px; margin: 20px auto; padding: 0 20px; display: none; }
+    
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .stats-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); flex: 1; margin-right: 10px; text-align: center; }
+    .stats-num { font-size: 24px; font-weight: bold; }
+    .stats-label { font-size: 12px; color: #666; }
+
+    .search-bar { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px; font-size: 16px; }
+
+    /* CATEGORY WRAPPER */
+    .cat-wrapper { margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background: white; }
+    
+    /* HEADER KATEGORI */
+    .cat-header { background: #e21b70; color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; cursor: pointer; user-select: none; }
+    .cat-header:hover { background: #d01a65; }
+    .cat-arrow { font-size: 0.8em; transition: transform 0.2s; }
+    .cat-arrow.closed { transform: rotate(-90deg); }
+
+    /* BODY KATEGORI */
+    .cat-body { display: none; padding-bottom: 5px; }
+    .cat-body.open { display: block; }
+
+    /* STOCK CARD LIST */
+    .stock-card { background: white; padding: 15px; margin-bottom: 2px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #ccc; border-bottom: 1px solid #eee; }
+    .stock-card:last-child { border-bottom: none; border-radius: 0 0 8px 8px; }
+    
+    .stock-info h4 { margin: 0; color: #333; font-size: 1rem; }
+    .stock-info p { margin: 5px 0 0; color: #666; font-size: 13px; }
+    
+    /* STATUS COLORS */
+    .low-stock { border-left-color: #dc2626; background: #fff5f5; }
+    .good-stock { border-left-color: #16a34a; }
+    .off-stock { background: #f8f9fa; opacity: 0.6; border-left-color: #6c757d; }
+    
+    .badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: white; display: inline-block; }
+    .badge-low { background: #dc2626; }
+    .badge-good { background: #16a34a; }
+    .badge-off { background: #6c757d; }
+
+    .btn-edit { padding: 6px 12px; background: #e21b70; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem; }
+    .btn-toggle { padding: 6px 12px; background: #17a2b8; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 5px; font-size: 0.9rem; }
+
+    /* MODAL */
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+    .modal-box { background: white; padding: 20px; border-radius: 8px; width: 300px; text-align: center; }
+    .modal-input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; font-size: 18px; text-align: center; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 10px; }
+    .modal-btn { padding: 10px; color: white; border: none; border-radius: 4px; cursor: pointer; flex: 1; }
+    .btn-save { background: #16a34a; }
+    .btn-cancel { background: #dc2626; }
+
+    /* BULK UPDATE MODAL STYLES */
+    #bulkList { flex: 1; overflow-y: auto; border: 1px solid #eee; padding: 10px; text-align: left; }
+    .bulk-row { display: flex; align-items: center; justify-content: space-between; padding: 8px; border-bottom: 1px solid #f0f0f0; }
+    .bulk-row:nth-child(even) { background: #fafafa; }
+    .bulk-name { font-size: 14px; font-weight: bold; }
+    .bulk-input { width: 80px; padding: 5px; text-align: center; border: 1px solid #ccc; border-radius: 4px; }
+    .add-btn { background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+
+    @media (max-width: 600px) {
+      .header { flex-direction: column; gap: 10px; }
+      .stats-card { margin-right: 0; margin-bottom: 5px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 1. LOGIN SCREEN -->
+  <div id="login">
+    <h2>🔐 Dashboard Admin</h2>
+    <p>Dapur Mommy System</p>
+    <input type="password" id="pinInput" class="pin-input" maxlength="4" placeholder="PIN">
+    <button class="login-btn" onclick="checkLogin()">Masuk</button>
+  </div>
+
+  <!-- 2. MAIN DASHBOARD -->
+  <div id="dashboard">
+    <div class="header">
+      <h2>Senarai Menu & Stok</h2>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button onclick="openBulkModal()" style="background:#007bff; color:white; border:none; padding:8px 12px; border-radius:4px; cursor:pointer;">🔄 Kemaskini Stok Jisim</button>
+        <button onclick="location.reload()" style="background:none; border:none; text-decoration:underline; cursor:pointer; color:#666;">Log Keluar</button>
+      </div>
+    </div>
+
+    <!-- STATS SUMMARY -->
+    <div style="display:flex; margin-bottom: 20px; flex-wrap: wrap;">
+      <div class="stats-card">
+        <div class="stats-num" id="totalItems">0</div>
+        <div class="stats-label">Jumlah Menu</div>
+      </div>
+      <div class="stats-card">
+        <div class="stats-num" id="lowStockCount" style="color:#dc2626;">0</div>
+        <div class="stats-label">Stok Rendah</div>
+      </div>
+    </div>
+
+    <!-- SEARCH -->
+    <input type="text" id="searchInput" class="search-bar" placeholder="🔍 Cari nama menu..." oninput="renderDashboard()">
+
+    <!-- LIST (Grouped & Collapsible) -->
+    <div id="stockList"></div>
+  </div>
+
+  <!-- 3. EDIT SINGLE MODAL -->
+  <div class="modal" id="editModal">
+    <div class="modal-box">
+      <h3>Kemaskini Stok</h3>
+      <p id="modalItemName" style="color:#666;">Nasi Goreng</p>
+      <p>Stok Semasa: <b id="modalCurrentStock">5</b></p>
+      
+      <label>Jumlah Baharu:</label>
+      <input type="number" id="newStockInput" class="modal-input" placeholder="Masukkan jumlah...">
+      
+      <div class="modal-actions">
+        <button class="modal-btn btn-save" onclick="saveStock()">Simpan</button>
+        <button class="modal-btn btn-cancel" onclick="closeModal()">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. BULK UPDATE MODAL -->
+  <div class="modal" id="bulkModal">
+    <div class="modal-box" style="width: 90%; max-width: 600px; height: 80vh; display: flex; flex-direction: column;">
+      <h3>📝 Kemaskini Stok Jisim</h3>
+      <p style="font-size: 12px; color: #666; margin-bottom: 10px;">Masukkan stok baharu untuk setiap item.</p>
+      
+      <div id="bulkList" style="flex: 1; overflow-y: auto; border: 1px solid #eee; padding: 10px; text-align: left;"></div>
+      
+      <div class="modal-actions">
+        <button class="modal-btn btn-save" id="btnBulkSave" onclick="saveBulkStocks()">Simpan Semua</button>
+        <button class="modal-btn btn-cancel" onclick="closeBulkModal()">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbymNCR6zuDguiPAldiuh2Orx5t0HmHY5cVfbvMHdiSt_VMOen8SquOIoBzFHy9jRajv8Q/exec";
+    const ADMIN_PIN = "8888"; 
+    
+    let stockDataRaw = {}; 
+    let stockDataFlat = []; 
+    let currentEditId = null;
+
+    // LOGIN
+    function checkLogin() {
+      if(document.getElementById("pinInput").value === ADMIN_PIN) {
+        document.getElementById("login").style.display = "none";
+        document.getElementById("dashboard").style.display = "block";
+        fetchStockData();
+      } else {
+        alert("PIN Salah!");
+      }
+    }
+
+    // FETCH DATA (SEMUA ITEM TERMASUK OFF)
+    function fetchStockData() {
+      fetch(API_URL + "?action=all_menu")
+        .then(r => r.json())
+        .then(res => {
+          if(!res.status) return alert("Gagal memuat data");
+          stockDataRaw = res.data; 
+          
+          const flat = [];
+          Object.keys(res.data).forEach(cat => {
+            res.data[cat].forEach(m => flat.push(m));
+          });
+          stockDataFlat = flat;
+          renderDashboard();
+        });
+    }
+
+    // RENDER LIST (With Accordion Logic)
+    function renderDashboard() {
+      const container = document.getElementById("stockList");
+      const search = document.getElementById("searchInput").value.toLowerCase();
+      container.innerHTML = "";
+      
+      // 1. Kira Stats
+      let total = stockDataFlat.length;
+      let low = stockDataFlat.filter(i => i.stok <= 10).length;
+      document.getElementById("totalItems").innerText = total;
+      document.getElementById("lowStockCount").innerText = low;
+
+      // 2. Loop Mengikut Kategori
+      Object.keys(stockDataRaw).forEach(cat => {
+        const items = stockDataRaw[cat];
+        const filteredItems = items.filter(i => i.menu.toLowerCase().includes(search));
+
+        if (filteredItems.length > 0) {
+          // --- BINA WRAPPER ---
+          const wrapper = document.createElement("div");
+          wrapper.className = "cat-wrapper";
+
+          // Tentukan keadaan awal (Search aktif = Buka, Search kosong = Tutup)
+          const isSearching = search.length > 0;
+          const bodyClass = isSearching ? "open" : "";
+          const arrowIcon = isSearching ? "▼" : "▶"; 
+
+          // --- HEADER (Clickable) ---
+          const header = document.createElement("div");
+          header.className = "cat-header";
+          header.innerHTML = `
+            <span>${cat} <span style="font-size:0.8em; opacity:0.8;">(${filteredItems.length})</span></span>
+            <span class="cat-arrow ${bodyClass === '' ? 'closed' : ''}">${arrowIcon}</span>
+          `;
+          wrapper.appendChild(header);
+
+          // --- PEMBAIKAN PENTING: Cari ELEMEN ANAK PANAH ---
+          const arrowSpan = header.querySelector('.cat-arrow');
+
+          // --- BODY (Hidden by default) ---
+          const bodyDiv = document.createElement("div");
+          bodyDiv.className = `cat-body ${bodyClass}`; 
+          
+          filteredItems.forEach(item => {
+            // Cek Status
+            const isActive = item.status === "AKTIF";
+            const isLow = item.stok <= 10;
+            
+            // Warna Card
+            let cardClass = "stock-card";
+            if (!isActive) cardClass += " off-stock";
+            else if (isLow) cardClass += " low-stock";
+            else cardClass += " good-stock";
+
+            const el = document.createElement("div");
+            el.className = cardClass;
+            
+            el.innerHTML = `
+              <div class="stock-info">
+                <h4>${item.menu}</h4>
+                <p>Harga: RM${Number(item.harga).toFixed(2)}</p>
+                <div>
+                  <span class="badge ${isActive ? (isLow ? 'badge-low' : 'badge-good') : 'badge-off'}">
+                    ${item.status}
+                  </span>
+                  <span class="badge ${isLow ? 'badge-low' : 'badge-good'}" style="margin-left:5px;">
+                    ${item.stok} Unit
+                  </span>
+                  ${isLow && isActive ? '<span style="color:red; font-size:10px; margin-left:5px;">(Kritikal)</span>' : ''}
+                </div>
+              </div>
+              <div>
+                <button class="btn-edit" onclick="openEdit('${item.id}', '${item.menu}', ${item.stok})">Stok</button>
+                ${isActive ? `<button class="btn-toggle" onclick="toggleItemStatus('${item.id}')">OFF</button>` : `<button class="btn-toggle" onclick="toggleItemStatus('${item.id}')">ON</button>`}
+              </div>
+            `;
+            bodyDiv.appendChild(el);
+          });
+
+          wrapper.appendChild(bodyDiv);
+          container.appendChild(wrapper);
+
+          // --- TAMBAH EVENT CLICK SELEPAS ARROWSPAN DIJUMPA ---
+          header.onclick = () => toggleCategory(bodyDiv, arrowSpan);
+        }
+      });
+    }
+
+    // FUNGSI TOGGLE (BUKA/TUTUP)
+    function toggleCategory(bodyDiv, arrowSpan) {
+      // Tukar paparan body
+      if (bodyDiv.style.display === "none" || bodyDiv.style.display === "") {
+        bodyDiv.style.display = "block";
+        arrowSpan.style.transform = "rotate(0deg)"; // ▼
+      } else {
+        bodyDiv.style.display = "none";
+        arrowSpan.style.transform = "rotate(-90deg)"; // ▶
+      }
+    }
+
+    // MODAL LOGIC (SINGLE ITEM)
+    function openEdit(id, name, currentStock) {
+      currentEditId = id;
+      document.getElementById("modalItemName").innerText = name;
+      document.getElementById("modalCurrentStock").innerText = currentStock;
+      document.getElementById("newStockInput").value = currentStock; 
+      document.getElementById("editModal").style.display = "flex";
+    }
+
+    function closeModal() {
+      document.getElementById("editModal").style.display = "none";
+    }
+
+    function saveStock() {
+      const newQty = document.getElementById("newStockInput").value;
+      if(!newQty || newQty < 0) return alert("Sila masukkan jumlah yang betul.");
+
+      fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify({
+          action: "set_stock_total",
+          id: currentEditId,
+          newStock: newQty
+        })
+      })
+      .then(r => r.json())
+      .then(res => {
+        if(res.status) {
+          alert(res.data.message);
+          closeModal();
+          fetchStockData(); 
+        } else {
+          alert("Gagal: " + res.msg);
+        }
+      });
+    }
+
+    // TOGGLE STATUS (ACTIVE / OFF)
+    function toggleItemStatus(id) {
+      if(!confirm("Adakah anda pasti mahu menukar status item ini?")) return;
+
+      fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify({
+          action: "toggle_status",
+          id: id
+        })
+      })
+      .then(r => r.json())
+      .then(res => {
+        if(res.status) {
+          alert(res.data.message);
+          fetchStockData(); 
+        } else {
+          alert("Gagal: " + res.msg);
+        }
+      });
+    }
+
+    // MODAL LOGIC (BULK UPDATE)
+    function openBulkModal() {
+      document.getElementById("bulkModal").style.display = "flex";
+      renderBulkList();
+    }
+
+    function closeBulkModal() {
+      document.getElementById("bulkModal").style.display = "none";
+    }
+
+    function renderBulkList() {
+      const container = document.getElementById("bulkList");
+      container.innerHTML = "";
+      
+      Object.keys(stockDataRaw).forEach(cat => {
+        const header = document.createElement("div");
+        header.style.cssText = "background:#e21b70; color:white; padding:5px 10px; margin-top:10px; font-weight:bold; border-radius:4px;";
+        header.innerText = cat;
+        container.appendChild(header);
+
+        stockDataRaw[cat].forEach(item => {
+          const row = document.createElement("div");
+          row.className = "bulk-row";
+          row.innerHTML = `
+            <span class="bulk-name">${item.menu}</span>
+            <input type="number" class="bulk-input" id="bulk-${item.id}" value="${item.stok}">
+          `;
+          container.appendChild(row);
+        });
+      });
+    }
+
+    function saveBulkStocks() {
+      const btn = document.getElementById("btnBulkSave");
+      const inputs = document.querySelectorAll('.bulk-input');
+      
+      const itemsToUpdate = [];
+      inputs.forEach(input => {
+        const id = input.id.replace('bulk-', '');
+        const newStock = Number(input.value);
+        itemsToUpdate.push({ id: id, newStock: newStock });
+      });
+
+      if(itemsToUpdate.length === 0) return alert("Tiada data.");
+
+      btn.innerText = "Sedang Simpan...";
+      btn.disabled = true;
+
+      fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify({
+          action: "bulk_update_stocks",
+          items: itemsToUpdate
+        })
+      })
+      .then(r => r.json())
+      .then(res => {
+        if(res.status) {
+          alert(res.data.message);
+          closeBulkModal();
+          fetchStockData(); 
+        } else {
+          alert("Gagal: " + res.msg);
+        }
+      })
+      .catch(err => {
+        alert("Ralat sistem");
+      })
+      .finally(() => {
+        btn.innerText = "Simpan Semua";
+        btn.disabled = false;
+      });
+    }
+  </script>
+</body>
+</html>
