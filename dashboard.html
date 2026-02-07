@@ -1,425 +1,903 @@
 <!DOCTYPE html>
 <html lang="ms">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard Admin - Stok</title>
   <style>
-    body { font-family: system-ui; background: #f4f6f8; margin: 0; padding: 0; }
-    
-    /* LOGIN */
-    #login { display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column; }
-    .pin-input { padding: 10px; font-size: 20px; margin-top: 10px; width: 150px; text-align: center; }
-    .login-btn { padding: 10px 20px; font-size: 16px; background: #e21b70; color: white; border: none; border-radius:5px; cursor: pointer; margin-top: 15px; }
+    :root {
+      --primary: #e21b70;
+      --bg: #f4f6f8;
+      --white: #fff;
+      --text: #333;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --border: #ddd;
+    }
 
-    /* DASHBOARD */
-    #dashboard { max-width: 900px; margin: 20px auto; padding: 0 20px; display: none; }
-    
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .stats-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); flex: 1; margin-right: 10px; text-align: center; }
-    .stats-num { font-size: 24px; font-weight: bold; }
-    .stats-label { font-size: 12px; color: #666; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      margin: 0;
+      padding: 0;
+    }
 
-    .search-bar { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px; font-size: 16px; }
+    /* --- LOADING OVERLAY --- */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.8);
+      z-index: 2000;
+      display: none;
+      /* Flex bila aktif */
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
 
-    /* CATEGORY WRAPPER */
-    .cat-wrapper { margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background: white; }
-    
-    /* HEADER KATEGORI */
-    .cat-header { background: #e21b70; color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; cursor: pointer; user-select: none; }
-    .cat-header:hover { background: #d01a65; }
-    .cat-arrow { font-size: 0.8em; transition: transform 0.2s; }
-    .cat-arrow.closed { transform: rotate(-90deg); }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #eee;
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
 
-    /* BODY KATEGORI */
-    .cat-body { display: none; padding-bottom: 5px; }
-    .cat-body.open { display: block; }
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
 
-    /* STOCK CARD LIST */
-    .stock-card { background: white; padding: 15px; margin-bottom: 2px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #ccc; border-bottom: 1px solid #eee; }
-    .stock-card:last-child { border-bottom: none; border-radius: 0 0 8px 8px; }
-    
-    .stock-info h4 { margin: 0; color: #333; font-size: 1rem; }
-    .stock-info p { margin: 5px 0 0; color: #666; font-size: 13px; }
-    
+    /* --- TOAST NOTIFICATION --- */
+    .toast-container {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 3000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 90%;
+      max-width: 400px;
+    }
+
+    .toast {
+      background: #333;
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 50px;
+      font-size: 14px;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.3s ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .toast.success {
+      background: var(--success);
+    }
+
+    .toast.error {
+      background: var(--danger);
+    }
+
+    /* --- LOGIN --- */
+    #login {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      flex-direction: column;
+    }
+
+    .pin-input {
+      padding: 12px;
+      font-size: 24px;
+      margin-top: 15px;
+      width: 160px;
+      text-align: center;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      outline: none;
+    }
+
+    .pin-input:focus {
+      border-color: var(--primary);
+    }
+
+    .login-btn {
+      padding: 12px 24px;
+      font-size: 16px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 20px;
+      font-weight: bold;
+      box-shadow: 0 4px 10px rgba(226, 27, 112, 0.3);
+    }
+
+    /* --- DASHBOARD --- */
+    #dashboard {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      display: none;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .header h2 {
+      margin: 0;
+      color: var(--text);
+    }
+
+    .btn-action {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .btn-bulk {
+      background: #2563eb;
+      color: white;
+    }
+
+    .btn-logout {
+      background: transparent;
+      color: #666;
+      text-decoration: underline;
+    }
+
+    .stats-grid {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .stats-card {
+      background: var(--white);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      flex: 1;
+      min-width: 140px;
+      text-align: center;
+      border-top: 4px solid var(--primary);
+    }
+
+    .stats-num {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .stats-label {
+      font-size: 13px;
+      color: #888;
+      margin-top: 5px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .search-bar {
+      width: 100%;
+      padding: 14px 20px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      font-size: 15px;
+      background: var(--white);
+      outline: none;
+    }
+
+    .search-bar:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(226, 27, 112, 0.1);
+    }
+
+    /* --- CATEGORY ACCORDION --- */
+    .cat-wrapper {
+      margin-bottom: 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      background: var(--white);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .cat-header {
+      background: var(--primary);
+      color: white;
+      padding: 12px 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: bold;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.2s;
+    }
+
+    .cat-header:hover {
+      background: #d01a65;
+    }
+
+    .cat-arrow {
+      font-size: 0.8em;
+      transition: transform 0.2s;
+      display: inline-block;
+    }
+
+    .cat-arrow.closed {
+      transform: rotate(-90deg);
+    }
+
+    .cat-body {
+      display: none;
+      padding: 5px 0;
+    }
+
+    .cat-body.open {
+      display: block;
+    }
+
+    /* --- ITEM CARD --- */
+    .stock-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 15px;
+      border-bottom: 1px solid #f0f0f0;
+      transition: background 0.2s;
+    }
+
+    .stock-card:last-child {
+      border-bottom: none;
+    }
+
+    .stock-card:hover {
+      background: #fafafa;
+    }
+
+    .stock-info h4 {
+      margin: 0;
+      color: #222;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .stock-info p {
+      margin: 4px 0 0;
+      color: #666;
+      font-size: 13px;
+    }
+
     /* STATUS COLORS */
-    .low-stock { border-left-color: #dc2626; background: #fff5f5; }
-    .good-stock { border-left-color: #16a34a; }
-    .off-stock { background: #f8f9fa; opacity: 0.6; border-left-color: #6c757d; }
-    
-    .badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: white; display: inline-block; }
-    .badge-low { background: #dc2626; }
-    .badge-good { background: #16a34a; }
-    .badge-off { background: #6c757d; }
+    .low-stock {
+      border-left: 4px solid var(--danger);
+      background: #fffafa;
+    }
 
-    .btn-edit { padding: 6px 12px; background: #e21b70; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem; }
-    .btn-toggle { padding: 6px 12px; background: #17a2b8; color: white; border: none; border-radius: 4px; cursor: pointer; margin-left: 5px; font-size: 0.9rem; }
+    .good-stock {
+      border-left: 4px solid var(--success);
+    }
 
-    /* MODAL */
-    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
-    .modal-box { background: white; padding: 20px; border-radius: 8px; width: 300px; text-align: center; }
-    .modal-input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; font-size: 18px; text-align: center; }
-    .modal-actions { display: flex; gap: 10px; margin-top: 10px; }
-    .modal-btn { padding: 10px; color: white; border: none; border-radius: 4px; cursor: pointer; flex: 1; }
-    .btn-save { background: #16a34a; }
-    .btn-cancel { background: #dc2626; }
+    .off-stock {
+      background: #f9f9f9;
+      opacity: 0.7;
+      border-left: 4px solid #999;
+    }
 
-    /* BULK UPDATE MODAL STYLES */
-    #bulkList { flex: 1; overflow-y: auto; border: 1px solid #eee; padding: 10px; text-align: left; }
-    .bulk-row { display: flex; align-items: center; justify-content: space-between; padding: 8px; border-bottom: 1px solid #f0f0f0; }
-    .bulk-row:nth-child(even) { background: #fafafa; }
-    .bulk-name { font-size: 14px; font-weight: bold; }
-    .bulk-input { width: 80px; padding: 5px; text-align: center; border: 1px solid #ccc; border-radius: 4px; }
-    .add-btn { background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+    .badge {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: bold;
+      color: white;
+      display: inline-block;
+    }
+
+    .badge-low {
+      background: var(--danger);
+    }
+
+    .badge-good {
+      background: var(--success);
+    }
+
+    .badge-off {
+      background: #6c757d;
+    }
+
+    /* CONTROLS */
+    .item-controls {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .btn-edit {
+      padding: 6px 12px;
+      background: var(--text);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .btn-toggle {
+      padding: 6px 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      color: white;
+    }
+
+    .btn-toggle.on {
+      background: var(--danger);
+      content: "OFF";
+    }
+
+    .btn-toggle.off {
+      background: var(--success);
+    }
+
+    /* --- MODALS --- */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(2px);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal-box {
+      background: var(--white);
+      padding: 24px;
+      border-radius: 16px;
+      width: 90%;
+      max-width: 350px;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes popIn {
+      from {
+        transform: scale(0.9);
+        opacity: 0;
+      }
+
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .modal-input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 20px;
+      text-align: center;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .modal-btn {
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      flex: 1;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .btn-save {
+      background: var(--success);
+      color: white;
+    }
+
+    .btn-cancel {
+      background: var(--danger);
+      color: white;
+    }
+
+    /* --- BULK MODAL --- */
+    #bulkModal .modal-box {
+      width: 95%;
+      max-width: 600px;
+      height: 80vh;
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .bulk-header {
+      background: var(--primary);
+      color: white;
+      padding: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .bulk-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 15px;
+      background: #fafafa;
+    }
+
+    .bulk-footer {
+      padding: 15px;
+      background: white;
+      border-top: 1px solid #eee;
+    }
+
+    .bulk-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px;
+      border-bottom: 1px solid #eee;
+      background: white;
+      border-radius: 6px;
+      margin-bottom: 5px;
+    }
+
+    .bulk-name {
+      font-size: 14px;
+      font-weight: 600;
+      flex: 1;
+      padding-right: 10px;
+    }
+
+    .bulk-input {
+      width: 70px;
+      padding: 6px;
+      text-align: center;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
 
     @media (max-width: 600px) {
-      .header { flex-direction: column; gap: 10px; }
-      .stats-card { margin-right: 0; margin-bottom: 5px; }
+      .stock-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+
+      .item-controls {
+        width: 100%;
+        justify-content: flex-end;
+      }
     }
   </style>
 </head>
+
 <body>
+
+  <!-- TOAST & LOADING -->
+  <div class="toast-container" id="toastContainer"></div>
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <p style="margin-top:15px; color:#555;">Memuatkan Data...</p>
+  </div>
 
   <!-- 1. LOGIN SCREEN -->
   <div id="login">
-    <h2>🔐 Dashboard Admin</h2>
-    <p>Dapur Mommy System</p>
-    <input type="password" id="pinInput" class="pin-input" maxlength="4" placeholder="PIN">
-    <button class="login-btn" onclick="checkLogin()">Masuk</button>
+    <h2 style="color: var(--primary);">🔐 Dashboard Admin</h2>
+    <p style="color:#666;">Dapur Mommy System</p>
+    <input type="password" id="pinInput" class="pin-input" maxlength="4" placeholder="PIN"
+      onkeydown="if(event.key==='Enter') checkLogin()">
+    <button class="login-btn" onclick="checkLogin()">Masuk Sistem</button>
   </div>
 
   <!-- 2. MAIN DASHBOARD -->
   <div id="dashboard">
     <div class="header">
-      <h2>Senarai Menu & Stok</h2>
-      <div style="display:flex; gap:10px; align-items:center;">
-        <button onclick="openBulkModal()" style="background:#007bff; color:white; border:none; padding:8px 12px; border-radius:4px; cursor:pointer;">🔄 Kemaskini Stok Jisim</button>
-        <button onclick="location.reload()" style="background:none; border:none; text-decoration:underline; cursor:pointer; color:#666;">Log Keluar</button>
+      <div>
+        <h2>Senarai Menu & Stok</h2>
+        <div style="font-size:12px; color:#666;">Kemaskini inventori anda</div>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn-action btn-bulk" onclick="openBulkModal()">🔄 Kemaskini Jisim</button>
+        <button class="btn-action btn-logout" onclick="location.reload()">Log Keluar</button>
       </div>
     </div>
 
-    <!-- STATS SUMMARY -->
-    <div style="display:flex; margin-bottom: 20px; flex-wrap: wrap;">
+    <!-- STATS -->
+    <div class="stats-grid">
       <div class="stats-card">
         <div class="stats-num" id="totalItems">0</div>
         <div class="stats-label">Jumlah Menu</div>
       </div>
       <div class="stats-card">
-        <div class="stats-num" id="lowStockCount" style="color:#dc2626;">0</div>
-        <div class="stats-label">Stok Rendah</div>
+        <div class="stats-num" id="lowStockCount" style="color:var(--danger)">0</div>
+        <div class="stats-label">Stok Rendah (<2)</div>
+        </div>
+      </div>
+
+      <!-- SEARCH -->
+      <input type="text" id="searchInput" class="search-bar" placeholder="🔍 Cari nama menu..."
+        oninput="renderDashboard()">
+
+      <!-- LIST -->
+      <div id="stockList"></div>
+    </div>
+
+    <!-- 3. SINGLE EDIT MODAL -->
+    <div class="modal" id="editModal">
+      <div class="modal-box">
+        <h3 id="modalItemName">Nasi Goreng</h3>
+        <div style="margin-bottom:15px;">
+          Stok Semasa: <b id="modalCurrentStock" style="font-size:18px; color:var(--primary)">5</b>
+        </div>
+        <label style="display:block; text-align:left; font-size:12px; font-weight:bold;">Jumlah Baharu:</label>
+        <input type="number" id="newStockInput" class="modal-input" min="0" placeholder="0">
+
+        <div class="modal-actions">
+          <button class="modal-btn btn-cancel" onclick="closeModal()">Batal</button>
+          <button class="modal-btn btn-save" onclick="saveStock()">Simpan</button>
+        </div>
       </div>
     </div>
 
-    <!-- SEARCH -->
-    <input type="text" id="searchInput" class="search-bar" placeholder="🔍 Cari nama menu..." oninput="renderDashboard()">
-
-    <!-- LIST (Grouped & Collapsible) -->
-    <div id="stockList"></div>
-  </div>
-
-  <!-- 3. EDIT SINGLE MODAL -->
-  <div class="modal" id="editModal">
-    <div class="modal-box">
-      <h3>Kemaskini Stok</h3>
-      <p id="modalItemName" style="color:#666;">Nasi Goreng</p>
-      <p>Stok Semasa: <b id="modalCurrentStock">5</b></p>
-      
-      <label>Jumlah Baharu:</label>
-      <input type="number" id="newStockInput" class="modal-input" placeholder="Masukkan jumlah...">
-      
-      <div class="modal-actions">
-        <button class="modal-btn btn-save" onclick="saveStock()">Simpan</button>
-        <button class="modal-btn btn-cancel" onclick="closeModal()">Batal</button>
+    <!-- 4. BULK UPDATE MODAL -->
+    <div class="modal" id="bulkModal">
+      <div class="modal-box">
+        <div class="bulk-header">
+          <span>📝 Kemaskini Stok Jisim</span>
+          <span style="cursor:pointer;" onclick="closeBulkModal()">✕</span>
+        </div>
+        <div id="bulkList" class="bulk-content"></div>
+        <div class="bulk-footer">
+          <div class="modal-actions">
+            <button class="modal-btn btn-cancel" onclick="closeBulkModal()">Batal</button>
+            <button class="modal-btn btn-save" id="btnBulkSave" onclick="saveBulkStocks()">Simpan Semua</button>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- 4. BULK UPDATE MODAL -->
-  <div class="modal" id="bulkModal">
-    <div class="modal-box" style="width: 90%; max-width: 600px; height: 80vh; display: flex; flex-direction: column;">
-      <h3>📝 Kemaskini Stok Jisim</h3>
-      <p style="font-size: 12px; color: #666; margin-bottom: 10px;">Masukkan stok baharu untuk setiap item.</p>
-      
-      <div id="bulkList" style="flex: 1; overflow-y: auto; border: 1px solid #eee; padding: 10px; text-align: left;"></div>
-      
-      <div class="modal-actions">
-        <button class="modal-btn btn-save" id="btnBulkSave" onclick="saveBulkStocks()">Simpan Semua</button>
-        <button class="modal-btn btn-cancel" onclick="closeBulkModal()">Batal</button>
-      </div>
-    </div>
-  </div>
+    <script>
+      const API_URL = "https://script.google.com/macros/s/AKfycbymNCR6zuDguiPAldiuh2Orx5t0HmHY5cVfbvMHdiSt_VMOen8SquOIoBzFHy9jRajv8Q/exec";
+      const ADMIN_PIN = "8888";
 
-  <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbymNCR6zuDguiPAldiuh2Orx5t0HmHY5cVfbvMHdiSt_VMOen8SquOIoBzFHy9jRajv8Q/exec";
-    const ADMIN_PIN = "8888"; 
-    
-    let stockDataRaw = {}; 
-    let stockDataFlat = []; 
-    let currentEditId = null;
+      let stockDataRaw = {};
+      let stockDataFlat = [];
+      let currentEditId = null;
 
-    // LOGIN
-    function checkLogin() {
-      if(document.getElementById("pinInput").value === ADMIN_PIN) {
-        document.getElementById("login").style.display = "none";
-        document.getElementById("dashboard").style.display = "block";
-        fetchStockData();
-      } else {
-        alert("PIN Salah!");
+      // --- UTILITIES ---
+      function showToast(msg, type = 'normal') {
+        const container = document.getElementById("toastContainer");
+        const toast = document.createElement("div");
+        toast.className = `toast ${type}`;
+        toast.textContent = msg;
+        container.appendChild(toast);
+        setTimeout(() => toast.classList.add("show"), 10);
+        setTimeout(() => {
+          toast.classList.remove("show");
+          setTimeout(() => toast.remove(), 300);
+        }, 3000);
       }
-    }
 
-    // FETCH DATA (SEMUA ITEM TERMASUK OFF)
-    function fetchStockData() {
-      fetch(API_URL + "?action=all_menu")
-        .then(r => r.json())
-        .then(res => {
-          if(!res.status) return alert("Gagal memuat data");
-          stockDataRaw = res.data; 
-          
-          const flat = [];
-          Object.keys(res.data).forEach(cat => {
-            res.data[cat].forEach(m => flat.push(m));
-          });
-          stockDataFlat = flat;
-          renderDashboard();
-        });
-    }
+      function toggleLoading(show) {
+        document.getElementById("loadingOverlay").style.display = show ? "flex" : "none";
+      }
 
-    // RENDER LIST (With Accordion Logic)
-    function renderDashboard() {
-      const container = document.getElementById("stockList");
-      const search = document.getElementById("searchInput").value.toLowerCase();
-      container.innerHTML = "";
-      
-      // 1. Kira Stats
-      let total = stockDataFlat.length;
-      let low = stockDataFlat.filter(i => i.stok <= 10).length;
-      document.getElementById("totalItems").innerText = total;
-      document.getElementById("lowStockCount").innerText = low;
+      // --- LOGIN ---
+      function checkLogin() {
+        if (document.getElementById("pinInput").value === ADMIN_PIN) {
+          document.getElementById("login").style.display = "none";
+          document.getElementById("dashboard").style.display = "block";
+          fetchStockData();
+        } else {
+          showToast("PIN Salah!", "error");
+          document.getElementById("pinInput").value = "";
+        }
+      }
 
-      // 2. Loop Mengikut Kategori
-      Object.keys(stockDataRaw).forEach(cat => {
-        const items = stockDataRaw[cat];
-        const filteredItems = items.filter(i => i.menu.toLowerCase().includes(search));
+      // --- DATA ---
+      function fetchStockData() {
+        toggleLoading(true);
+        fetch(API_URL + "?action=all_menu")
+          .then(r => r.json())
+          .then(res => {
+            if (!res.status) throw new Error(res.msg || "Gagal memuat data");
+            stockDataRaw = res.data;
 
-        if (filteredItems.length > 0) {
-          // --- BINA WRAPPER ---
-          const wrapper = document.createElement("div");
-          wrapper.className = "cat-wrapper";
+            const flat = [];
+            Object.keys(res.data).forEach(cat => {
+              res.data[cat].forEach(m => flat.push(m));
+            });
+            stockDataFlat = flat;
+            renderDashboard();
+          })
+          .catch(err => {
+            console.error(err);
+            showToast("Ralat memuat data", "error");
+          })
+          .finally(() => toggleLoading(false));
+      }
 
-          // Tentukan keadaan awal (Search aktif = Buka, Search kosong = Tutup)
-          const isSearching = search.length > 0;
-          const bodyClass = isSearching ? "open" : "";
-          const arrowIcon = isSearching ? "▼" : "▶"; 
+      // --- RENDER ---
+      function renderDashboard() {
+        const container = document.getElementById("stockList");
+        const search = document.getElementById("searchInput").value.toLowerCase();
+        container.innerHTML = "";
 
-          // --- HEADER (Clickable) ---
-          const header = document.createElement("div");
-          header.className = "cat-header";
-          header.innerHTML = `
+        let total = stockDataFlat.length;
+        let low = stockDataFlat.filter(i => i.stok <= 10).length;
+        document.getElementById("totalItems").innerText = total;
+        document.getElementById("lowStockCount").innerText = low;
+
+        Object.keys(stockDataRaw).forEach(cat => {
+          const items = stockDataRaw[cat];
+          const filteredItems = items.filter(i => i.menu.toLowerCase().includes(search));
+
+          if (filteredItems.length > 0) {
+            const wrapper = document.createElement("div");
+            wrapper.className = "cat-wrapper";
+
+            const isSearching = search.length > 0;
+            const bodyClass = isSearching ? "open" : "";
+            const arrowIcon = isSearching ? "▼" : "▶";
+
+            const header = document.createElement("div");
+            header.className = "cat-header";
+            header.innerHTML = `
             <span>${cat} <span style="font-size:0.8em; opacity:0.8;">(${filteredItems.length})</span></span>
             <span class="cat-arrow ${bodyClass === '' ? 'closed' : ''}">${arrowIcon}</span>
           `;
-          wrapper.appendChild(header);
+            wrapper.appendChild(header);
+            const arrowSpan = header.querySelector('.cat-arrow');
 
-          // --- PEMBAIKAN PENTING: Cari ELEMEN ANAK PANAH ---
-          const arrowSpan = header.querySelector('.cat-arrow');
+            const bodyDiv = document.createElement("div");
+            bodyDiv.className = `cat-body ${bodyClass}`;
 
-          // --- BODY (Hidden by default) ---
-          const bodyDiv = document.createElement("div");
-          bodyDiv.className = `cat-body ${bodyClass}`; 
-          
-          filteredItems.forEach(item => {
-            // Cek Status
-            const isActive = item.status === "AKTIF";
-            const isLow = item.stok <= 10;
-            
-            // Warna Card
-            let cardClass = "stock-card";
-            if (!isActive) cardClass += " off-stock";
-            else if (isLow) cardClass += " low-stock";
-            else cardClass += " good-stock";
+            filteredItems.forEach(item => {
+              const isActive = item.status === "AKTIF";
+              const isLow = item.stok <= 10;
 
-            const el = document.createElement("div");
-            el.className = cardClass;
-            
-            el.innerHTML = `
+              let cardClass = "stock-card";
+              if (!isActive) cardClass += " off-stock";
+              else if (isLow) cardClass += " low-stock";
+              else cardClass += " good-stock";
+
+              const el = document.createElement("div");
+              el.className = cardClass;
+
+              // Butang Toggle Style
+              const toggleBtnClass = isActive ? "btn-toggle on" : "btn-toggle off";
+              const toggleBtnText = isActive ? "MATIKAN" : "HIDUPKAN";
+
+              el.innerHTML = `
               <div class="stock-info">
                 <h4>${item.menu}</h4>
                 <p>Harga: RM${Number(item.harga).toFixed(2)}</p>
-                <div>
+                <div style="margin-top:6px;">
                   <span class="badge ${isActive ? (isLow ? 'badge-low' : 'badge-good') : 'badge-off'}">
                     ${item.status}
                   </span>
                   <span class="badge ${isLow ? 'badge-low' : 'badge-good'}" style="margin-left:5px;">
-                    ${item.stok} Unit
+                    Stok: ${item.stok}
                   </span>
-                  ${isLow && isActive ? '<span style="color:red; font-size:10px; margin-left:5px;">(Kritikal)</span>' : ''}
+                  ${isLow && isActive ? '<span style="color:red; font-size:10px; margin-left:5px; font-weight:bold;">(Kritikal)</span>' : ''}
                 </div>
               </div>
-              <div>
-                <button class="btn-edit" onclick="openEdit('${item.id}', '${item.menu}', ${item.stok})">Stok</button>
-                ${isActive ? `<button class="btn-toggle" onclick="toggleItemStatus('${item.id}')">OFF</button>` : `<button class="btn-toggle" onclick="toggleItemStatus('${item.id}')">ON</button>`}
+              <div class="item-controls">
+                <button class="btn-edit" onclick="openEdit('${item.id}', '${item.menu.replace(/'/g, "\\'")}', ${item.stok})">Edit Stok</button>
+                <button class="${toggleBtnClass}" onclick="toggleItemStatus('${item.id}')">${toggleBtnText}</button>
               </div>
             `;
-            bodyDiv.appendChild(el);
-          });
+              bodyDiv.appendChild(el);
+            });
 
-          wrapper.appendChild(bodyDiv);
-          container.appendChild(wrapper);
+            wrapper.appendChild(bodyDiv);
+            container.appendChild(wrapper);
 
-          // --- TAMBAH EVENT CLICK SELEPAS ARROWSPAN DIJUMPA ---
-          header.onclick = () => toggleCategory(bodyDiv, arrowSpan);
-        }
-      });
-    }
-
-    // FUNGSI TOGGLE (BUKA/TUTUP)
-    function toggleCategory(bodyDiv, arrowSpan) {
-      // Tukar paparan body
-      if (bodyDiv.style.display === "none" || bodyDiv.style.display === "") {
-        bodyDiv.style.display = "block";
-        arrowSpan.style.transform = "rotate(0deg)"; // ▼
-      } else {
-        bodyDiv.style.display = "none";
-        arrowSpan.style.transform = "rotate(-90deg)"; // ▶
-      }
-    }
-
-    // MODAL LOGIC (SINGLE ITEM)
-    function openEdit(id, name, currentStock) {
-      currentEditId = id;
-      document.getElementById("modalItemName").innerText = name;
-      document.getElementById("modalCurrentStock").innerText = currentStock;
-      document.getElementById("newStockInput").value = currentStock; 
-      document.getElementById("editModal").style.display = "flex";
-    }
-
-    function closeModal() {
-      document.getElementById("editModal").style.display = "none";
-    }
-
-    function saveStock() {
-      const newQty = document.getElementById("newStockInput").value;
-      if(!newQty || newQty < 0) return alert("Sila masukkan jumlah yang betul.");
-
-      fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain" },
-        body: JSON.stringify({
-          action: "set_stock_total",
-          id: currentEditId,
-          newStock: newQty
-        })
-      })
-      .then(r => r.json())
-      .then(res => {
-        if(res.status) {
-          alert(res.data.message);
-          closeModal();
-          fetchStockData(); 
-        } else {
-          alert("Gagal: " + res.msg);
-        }
-      });
-    }
-
-    // TOGGLE STATUS (ACTIVE / OFF)
-    function toggleItemStatus(id) {
-      if(!confirm("Adakah anda pasti mahu menukar status item ini?")) return;
-
-      fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain" },
-        body: JSON.stringify({
-          action: "toggle_status",
-          id: id
-        })
-      })
-      .then(r => r.json())
-      .then(res => {
-        if(res.status) {
-          alert(res.data.message);
-          fetchStockData(); 
-        } else {
-          alert("Gagal: " + res.msg);
-        }
-      });
-    }
-
-    // MODAL LOGIC (BULK UPDATE)
-    function openBulkModal() {
-      document.getElementById("bulkModal").style.display = "flex";
-      renderBulkList();
-    }
-
-    function closeBulkModal() {
-      document.getElementById("bulkModal").style.display = "none";
-    }
-
-    function renderBulkList() {
-      const container = document.getElementById("bulkList");
-      container.innerHTML = "";
-      
-      Object.keys(stockDataRaw).forEach(cat => {
-        const header = document.createElement("div");
-        header.style.cssText = "background:#e21b70; color:white; padding:5px 10px; margin-top:10px; font-weight:bold; border-radius:4px;";
-        header.innerText = cat;
-        container.appendChild(header);
-
-        stockDataRaw[cat].forEach(item => {
-          const row = document.createElement("div");
-          row.className = "bulk-row";
-          row.innerHTML = `
-            <span class="bulk-name">${item.menu}</span>
-            <input type="number" class="bulk-input" id="bulk-${item.id}" value="${item.stok}">
-          `;
-          container.appendChild(row);
+            header.onclick = () => toggleCategory(bodyDiv, arrowSpan);
+          }
         });
-      });
-    }
+      }
 
-    function saveBulkStocks() {
-      const btn = document.getElementById("btnBulkSave");
-      const inputs = document.querySelectorAll('.bulk-input');
-      
-      const itemsToUpdate = [];
-      inputs.forEach(input => {
-        const id = input.id.replace('bulk-', '');
-        const newStock = Number(input.value);
-        itemsToUpdate.push({ id: id, newStock: newStock });
-      });
-
-      if(itemsToUpdate.length === 0) return alert("Tiada data.");
-
-      btn.innerText = "Sedang Simpan...";
-      btn.disabled = true;
-
-      fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain" },
-        body: JSON.stringify({
-          action: "bulk_update_stocks",
-          items: itemsToUpdate
-        })
-      })
-      .then(r => r.json())
-      .then(res => {
-        if(res.status) {
-          alert(res.data.message);
-          closeBulkModal();
-          fetchStockData(); 
+      function toggleCategory(bodyDiv, arrowSpan) {
+        if (bodyDiv.style.display === "none" || bodyDiv.style.display === "") {
+          bodyDiv.style.display = "block";
+          arrowSpan.style.transform = "rotate(0deg)";
         } else {
-          alert("Gagal: " + res.msg);
+          bodyDiv.style.display = "none";
+          arrowSpan.style.transform = "rotate(-90deg)";
         }
-      })
-      .catch(err => {
-        alert("Ralat sistem");
-      })
-      .finally(() => {
-        btn.innerText = "Simpan Semua";
-        btn.disabled = false;
-      });
-    }
-  </script>
+      }
+
+      // --- SINGLE EDIT ---
+      function openEdit(id, name, currentStock) {
+        currentEditId = id;
+        document.getElementById("modalItemName").innerText = name;
+        document.getElementById("modalCurrentStock").innerText = currentStock;
+        document.getElementById("newStockInput").value = currentStock;
+        document.getElementById("editModal").style.display = "flex";
+        document.getElementById("newStockInput").focus();
+      }
+
+      function closeModal() {
+        document.getElementById("editModal").style.display = "none";
+      }
+
+      function saveStock() {
+        const newQty = document.getElementById("newStockInput").value;
+        if (newQty === "" || newQty < 0) return showToast("Sila masukkan jumlah yang sah.", "error");
+
+        toggleLoading(true);
+        closeModal();
+
+        fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify({
+            action: "set_stock_total",
+            id: currentEditId,
+            newStock: newQty
+          })
+        })
+          .then(r => r.json())
+          .then(res => {
+            if (res.status) {
+              showToast(res.data.message || "Stok berjaya dikemaskini", "success");
+              fetchStockData();
+            } else {
+              showToast("Gagal: " + res.msg, "error");
+            }
+          })
+          .finally(() => toggleLoading(false));
+      }
+
+      // --- TOGGLE STATUS ---
+      function toggleItemStatus(id) {
+        if (!confirm("Adakah anda pasti mahu menukar status item ini?")) return;
+
+        toggleLoading(true);
+
+        fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify({
+            action: "toggle_status",
+            id: id
+          })
+        })
+          .then(r => r.json())
+          .then(res => {
+            if (res.status) {
+              showToast(res.data.message, "success");
+              fetchStockData();
+            } else {
+              showToast("Gagal: " + res.msg, "error");
+            }
+          })
+          .finally(() => toggleLoading(false));
+      }
+
+      // --- BULK EDIT ---
+      function openBulkModal() {
+        document.getElementById("bulkModal").style.display = "flex";
+        renderBulkList();
+      }
+
+      function closeBulkModal() {
+        document.getElementById("bulkModal").style.display = "none";
+      }
+
+      function renderBulkList() {
+        const container = document.getElementById("bulkList");
+        container.innerHTML = "";
+
+        Object.keys(stockDataRaw).forEach(cat => {
+          const header = document.createElement("div");
+          header.style.cssText = "background:#eee; color:#555; padding:8px 10px; margin-top:10px; font-weight:bold; border-radius:4px; font-size:12px;";
+          header.innerText = cat.toUpperCase();
+          container.appendChild(header);
+
+          stockDataRaw[cat].forEach(item => {
+            const row = document.createElement("div");
+            row.className = "bulk-row";
+            row.innerHTML = `
+            <span class="bulk-name">${item.menu}</span>
+            <input type="number" class="bulk-input" id="bulk-${item.id}" value="${item.stok}" min="0">
+          `;
+            container.appendChild(row);
+          });
+        });
+      }
+
+      function saveBulkStocks() {
+        const btn = document.getElementById("btnBulkSave");
+        const inputs = document.querySelectorAll('.bulk-input');
+
+        const itemsToUpdate = [];
+        inputs.forEach(input => {
+          const id = input.id.replace('bulk-', '');
+          const newStock = Number(input.value);
+          itemsToUpdate.push({ id: id, newStock: newStock });
+        });
+
+        if (itemsToUpdate.length === 0) return;
+
+        btn.innerText = "Sedang Simpan...";
+        btn.disabled = true;
+
+        fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify({
+            action: "bulk_update_stocks",
+            items: itemsToUpdate
+          })
+        })
+          .then(r => r.json())
+          .then(res => {
+            if (res.status) {
+              showToast("Semua stok berjaya dikemaskini!", "success");
+              closeBulkModal();
+              fetchStockData();
+            } else {
+              showToast("Gagal: " + res.msg, "error");
+            }
+          })
+          .catch(err => showToast("Ralat sistem", "error"))
+          .finally(() => {
+            btn.innerText = "Simpan Semua";
+            btn.disabled = false;
+          });
+      }
+    </script>
 </body>
+
 </html>
