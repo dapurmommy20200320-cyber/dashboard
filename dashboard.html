@@ -3,61 +3,79 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard Admin - Stok</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Dashboard Admin - Stok & Jualan</title>
   <style>
     :root {
-      --primary: #e21b70;
-      --bg: #f4f6f8;
-      --white: #fff;
-      --text: #333;
-      --success: #16a34a;
-      --danger: #dc2626;
-      --border: #ddd;
+      /* --- MODERN ROSE PINK THEME --- */
+      --primary: #db2777;
+      --primary-light: #fce7f3;
+      --primary-dark: #be185d;
+      --bg: #fff1f2;
+      --surface: #ffffff;
+      --text-main: #1f2937;
+      --text-sub: #6b7280;
+      --success: #10b981;
+      --danger: #ef4444;
+      --money: #16a34a;
+      /* Green */
+      --profit: #8b5cf6;
+      /* Purple */
+
+      /* --- SHADOWS --- */
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     }
 
-    body {
-      font-family: system-ui, -apple-system, sans-serif;
-      background: var(--bg);
-      margin: 0;
-      padding: 0;
-    }
-
-    /* --- LOADING OVERLAY --- */
-    .loading-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(255, 255, 255, 0.8);
-      z-index: 2000;
-      display: none;
-      /* Flex bila aktif */
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .spinner {
-      width: 40px;
-      height: 40px;
-      border: 4px solid #eee;
-      border-top-color: var(--primary);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-
+    /* --- ANIMATIONS --- */
     @keyframes spin {
       to {
         transform: rotate(360deg);
       }
     }
 
+    @keyframes popIn {
+      from {
+        transform: scale(0.9);
+        opacity: 0;
+      }
+
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    /* --- GLOBAL RESET --- */
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+
+    /* --- SPINNER LOADING --- */
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
     /* --- TOAST NOTIFICATION --- */
     .toast-container {
       position: fixed;
-      bottom: 20px;
+      bottom: 30px;
       left: 50%;
       transform: translateX(-50%);
       z-index: 3000;
@@ -66,24 +84,25 @@
       gap: 10px;
       width: 90%;
       max-width: 400px;
+      pointer-events: none;
     }
 
     .toast {
-      background: #333;
+      background: #1f2937;
       color: #fff;
-      padding: 12px 20px;
+      padding: 14px 24px;
       border-radius: 50px;
       font-size: 14px;
       text-align: center;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      box-shadow: var(--shadow-lg);
       opacity: 0;
-      transform: translateY(20px);
-      transition: all 0.3s ease;
+      transform: translateY(20px) scale(0.9);
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
     .toast.show {
       opacity: 1;
-      transform: translateY(0);
+      transform: translateY(0) scale(1);
     }
 
     .toast.success {
@@ -94,164 +113,306 @@
       background: var(--danger);
     }
 
+    .toast.info {
+      background: #3b82f6;
+    }
+
+    /* --- LOADING OVERLAY --- */
+    #loadingOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.9);
+      z-index: 2000;
+      display: none;
+      /* Hidden by default */
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
     /* --- LOGIN --- */
     #login {
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
+      min-height: 100vh;
       flex-direction: column;
+      padding: 20px;
+      background: linear-gradient(135deg, #fff1f2 0%, #fff 100%);
+    }
+
+    .login-card {
+      background: white;
+      padding: 40px 30px;
+      border-radius: 24px;
+      box-shadow: var(--shadow-lg);
+      width: 100%;
+      max-width: 350px;
+      text-align: center;
+      animation: fadeInUp 0.6s ease-out;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .login-title {
+      color: var(--primary);
+      margin-bottom: 5px;
+      font-size: 24px;
+      font-weight: 800;
     }
 
     .pin-input {
-      padding: 12px;
+      width: 100%;
+      padding: 16px;
       font-size: 24px;
-      margin-top: 15px;
-      width: 160px;
-      text-align: center;
-      border: 2px solid var(--border);
-      border-radius: 8px;
+      margin-top: 20px;
+      border: 2px solid #f3f4f6;
+      border-radius: 16px;
       outline: none;
+      text-align: center;
+      letter-spacing: 8px;
+      transition: all 0.3s;
     }
 
     .pin-input:focus {
       border-color: var(--primary);
+      box-shadow: 0 0 0 4px var(--primary-light);
     }
 
     .login-btn {
-      padding: 12px 24px;
+      width: 100%;
+      padding: 16px;
+      margin-top: 24px;
       font-size: 16px;
-      background: var(--primary);
+      font-weight: 600;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
       color: white;
       border: none;
-      border-radius: 8px;
+      border-radius: 16px;
       cursor: pointer;
-      margin-top: 20px;
-      font-weight: bold;
-      box-shadow: 0 4px 10px rgba(226, 27, 112, 0.3);
+      box-shadow: 0 4px 15px rgba(219, 39, 119, 0.4);
+      transition: transform 0.2s;
     }
 
-    /* --- DASHBOARD --- */
+    .login-btn:active {
+      transform: scale(0.98);
+    }
+
+    /* --- DASHBOARD LAYOUT --- */
     #dashboard {
       max-width: 900px;
       margin: 0 auto;
       padding: 20px;
+      padding-bottom: 100px;
       display: none;
     }
 
+    /* HEADER (GLASS) */
     .header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      margin: -20px -20px 20px -20px;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.5);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 20px;
       flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .header-title h2 {
+      margin: 0;
+      font-size: 20px;
+      color: var(--text-main);
+    }
+
+    .header-title p {
+      margin: 4px 0 0;
+      font-size: 12px;
+      color: var(--text-sub);
+    }
+
+    .header-actions {
+      display: flex;
       gap: 10px;
     }
 
-    .header h2 {
-      margin: 0;
-      color: var(--text);
-    }
-
-    .btn-action {
-      padding: 8px 16px;
+    .btn-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
       border: none;
-      border-radius: 6px;
+      background: white;
+      color: var(--text-sub);
+      font-size: 18px;
       cursor: pointer;
-      font-weight: 600;
-      font-size: 14px;
-    }
-
-    .btn-bulk {
-      background: #2563eb;
-      color: white;
-    }
-
-    .btn-logout {
-      background: transparent;
-      color: #666;
-      text-decoration: underline;
-    }
-
-    .stats-grid {
+      box-shadow: var(--shadow-sm);
       display: flex;
-      gap: 15px;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .btn-icon:hover {
+      transform: translateY(-2px);
+      color: var(--primary);
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn-danger {
+      color: var(--danger);
+      background: #fef2f2;
+    }
+
+    .btn-danger:hover {
+      background: #fee2e2;
+    }
+
+    /* STATS GRID */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
     }
 
     .stats-card {
-      background: var(--white);
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-      flex: 1;
-      min-width: 140px;
+      background: var(--surface);
+      padding: 20px 10px;
+      border-radius: 20px;
+      box-shadow: var(--shadow-sm);
       text-align: center;
       border-top: 4px solid var(--primary);
     }
 
+    .stats-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .stats-icon {
+      font-size: 24px;
+      margin-bottom: 8px;
+      display: inline-block;
+      padding: 10px;
+      border-radius: 50%;
+      background: var(--bg);
+    }
+
     .stats-num {
-      font-size: 28px;
+      font-size: 24px;
       font-weight: 800;
-      color: var(--primary);
+      color: var(--text-main);
+      line-height: 1.2;
+      word-break: break-all;
+      /* TAMBAHAN BAIK: Elak nombor terpotong */
     }
 
     .stats-label {
-      font-size: 13px;
-      color: #888;
-      margin-top: 5px;
+      font-size: 11px;
+      color: var(--text-sub);
       font-weight: 600;
+      letter-spacing: 0.5px;
       text-transform: uppercase;
+    }
+
+    .stats-card.sales .stats-icon {
+      color: white;
+      background: var(--money);
+    }
+
+    .stats-card.profit .stats-icon {
+      color: white;
+      background: var(--profit);
+    }
+
+    .stats-card.sales .stats-num {
+      color: var(--money);
+    }
+
+    .stats-card.profit .stats-num {
+      color: var(--profit);
+    }
+
+    /* SEARCH BAR */
+    .search-wrapper {
+      position: relative;
+      margin-bottom: 24px;
     }
 
     .search-bar {
       width: 100%;
-      padding: 14px 20px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      margin-bottom: 20px;
+      padding: 16px 16px 16px 50px;
+      border: none;
+      border-radius: 16px;
+      background: white;
+      box-shadow: var(--shadow-sm);
       font-size: 15px;
-      background: var(--white);
+      color: var(--text-main);
       outline: none;
+      transition: all 0.3s;
     }
 
     .search-bar:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(226, 27, 112, 0.1);
+      box-shadow: 0 0 0 3px var(--primary-light);
     }
 
-    /* --- CATEGORY ACCORDION --- */
+    .search-icon {
+      position: absolute;
+      left: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-sub);
+    }
+
+    /* CATEGORY & LIST */
     .cat-wrapper {
-      margin-bottom: 12px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
+      margin-bottom: 16px;
+      background: white;
+      border-radius: 20px;
+      box-shadow: var(--shadow-sm);
       overflow: hidden;
-      background: var(--white);
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      animation: fadeInUp 0.4s ease-out backwards;
     }
 
     .cat-header {
-      background: var(--primary);
-      color: white;
-      padding: 12px 15px;
+      background: white;
+      padding: 16px 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-weight: bold;
+      font-weight: 700;
+      color: var(--text-main);
       cursor: pointer;
       user-select: none;
       transition: background 0.2s;
     }
 
     .cat-header:hover {
-      background: #d01a65;
+      background: #fafafa;
     }
 
     .cat-arrow {
-      font-size: 0.8em;
-      transition: transform 0.2s;
-      display: inline-block;
+      transition: transform 0.3s;
+      font-size: 12px;
+      color: var(--text-sub);
     }
 
     .cat-arrow.closed {
@@ -260,45 +421,44 @@
 
     .cat-body {
       display: none;
-      padding: 5px 0;
+      background: #f9fafb;
     }
 
     .cat-body.open {
       display: block;
     }
 
-    /* --- ITEM CARD --- */
+    /* ITEM CARD */
     .stock-card {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 12px 15px;
-      border-bottom: 1px solid #f0f0f0;
-      transition: background 0.2s;
+      padding: 16px 20px;
+      background: white;
+      margin: 0 0 1px 0;
     }
 
     .stock-card:last-child {
-      border-bottom: none;
+      margin-bottom: 0;
     }
 
-    .stock-card:hover {
-      background: #fafafa;
+    .stock-info {
+      flex: 1;
     }
 
     .stock-info h4 {
       margin: 0;
-      color: #222;
+      color: var(--text-main);
       font-size: 15px;
-      font-weight: 700;
+      font-weight: 600;
     }
 
     .stock-info p {
       margin: 4px 0 0;
-      color: #666;
+      color: var(--text-sub);
       font-size: 13px;
     }
 
-    /* STATUS COLORS */
     .low-stock {
       border-left: 4px solid var(--danger);
       background: #fffafa;
@@ -316,59 +476,73 @@
 
     .badge {
       padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 11px;
-      font-weight: bold;
-      color: white;
-      display: inline-block;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
     }
 
-    .badge-low {
-      background: var(--danger);
-    }
-
-    .badge-good {
-      background: var(--success);
+    .badge-active {
+      background: #d1fae5;
+      color: #065f46;
     }
 
     .badge-off {
-      background: #6c757d;
+      background: #f3f4f6;
+      color: #4b5563;
     }
 
-    /* CONTROLS */
+    .badge-low {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .badge-good {
+      background: #e0e7ff;
+      color: #3730a3;
+    }
+
     .item-controls {
       display: flex;
-      gap: 6px;
-      align-items: center;
+      gap: 8px;
+      margin-left: 10px;
     }
 
     .btn-edit {
       padding: 6px 12px;
-      background: var(--text);
-      color: white;
+      background: var(--bg);
+      color: var(--primary);
       border: none;
-      border-radius: 6px;
+      border-radius: 10px;
       cursor: pointer;
-      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .btn-toggle {
       padding: 6px 10px;
       border: none;
-      border-radius: 6px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
       cursor: pointer;
-      font-size: 13px;
-      font-weight: 600;
-      color: white;
     }
 
     .btn-toggle.on {
-      background: var(--danger);
-      content: "OFF";
+      background: var(--primary);
+      color: white;
     }
 
     .btn-toggle.off {
-      background: var(--success);
+      background: #e5e7eb;
+      color: #374151;
+    }
+
+    /* TAMBAHAN BAIK: Butang Toggle dikurangkan saiz sedikit apabila dikawal formula */
+    .btn-toggle:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
 
     /* --- MODALS --- */
@@ -379,82 +553,90 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(2px);
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
       justify-content: center;
       align-items: center;
-      z-index: 1000;
     }
 
     .modal-box {
-      background: var(--white);
+      background: var(--surface);
       padding: 24px;
       border-radius: 16px;
       width: 90%;
       max-width: 350px;
       text-align: center;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-      animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-
-    @keyframes popIn {
-      from {
-        transform: scale(0.9);
-        opacity: 0;
-      }
-
-      to {
-        transform: scale(1);
-        opacity: 1;
-      }
+      box-shadow: var(--shadow-lg);
+      animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
     .modal-input {
       width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 20px;
+      padding: 16px;
+      margin: 20px 0;
+      border: 2px solid #f3f4f6;
+      border-radius: 16px;
+      font-size: 24px;
       text-align: center;
+      font-weight: bold;
+      color: var(--text-main);
+      outline: none;
+    }
+
+    .modal-input:focus {
+      border-color: var(--primary);
     }
 
     .modal-actions {
       display: flex;
-      gap: 10px;
-      margin-top: 20px;
+      gap: 12px;
     }
 
     .modal-btn {
+      flex: 1;
       padding: 12px;
       border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      flex: 1;
+      border-radius: 14px;
       font-weight: bold;
       font-size: 14px;
+      cursor: pointer;
     }
 
     .btn-save {
-      background: var(--success);
+      background: var(--primary);
       color: white;
+      box-shadow: 0 4px 10px rgba(219, 39, 119, 0.3);
     }
 
     .btn-cancel {
-      background: var(--danger);
-      color: white;
+      background: #f3f4f6;
+      color: #374151;
     }
 
-    /* --- BULK MODAL --- */
+    /* BULK MODAL SPECIFIC */
     #bulkModal .modal-box {
       width: 95%;
       max-width: 600px;
-      height: 80vh;
+      height: 85vh;
       display: flex;
       flex-direction: column;
       padding: 0;
       border-radius: 16px;
       overflow: hidden;
+      animation: slideUp 0.3s ease-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(50px);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
     }
 
     .bulk-header {
@@ -466,11 +648,16 @@
       align-items: center;
     }
 
+    .bulk-header h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+
     .bulk-content {
       flex: 1;
       overflow-y: auto;
       padding: 15px;
-      background: #fafafa;
+      background: #f9fafb;
     }
 
     .bulk-footer {
@@ -483,38 +670,56 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 8px;
+      padding: 10px;
       border-bottom: 1px solid #eee;
       background: white;
-      border-radius: 6px;
+      border-radius: 12px;
       margin-bottom: 5px;
     }
 
     .bulk-name {
       font-size: 14px;
       font-weight: 600;
-      flex: 1;
-      padding-right: 10px;
+      color: var(--text-main);
     }
 
     .bulk-input {
-      width: 70px;
-      padding: 6px;
+      width: 80px;
+      padding: 8px;
       text-align: center;
       border: 1px solid #ddd;
       border-radius: 4px;
+      font-weight: bold;
+    }
+
+    .spin-small {
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      border-top-color: #333;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
     }
 
     @media (max-width: 600px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
       .stock-card {
         flex-direction: column;
         align-items: flex-start;
         gap: 10px;
       }
 
-      .item-controls {
+      .controls {
         width: 100%;
-        justify-content: flex-end;
+        justify-content: space-between;
+        margin-left: 0;
+      }
+
+      .btn-toggle {
+        flex: 1;
       }
     }
   </style>
@@ -526,378 +731,475 @@
   <div class="toast-container" id="toastContainer"></div>
   <div class="loading-overlay" id="loadingOverlay">
     <div class="spinner"></div>
-    <p style="margin-top:15px; color:#555;">Memuatkan Data...</p>
+    <p style="margin-top:15px; color: var(--text-sub); font-weight: 500;">Memuatkan Data...</p>
   </div>
 
   <!-- 1. LOGIN SCREEN -->
   <div id="login">
-    <h2 style="color: var(--primary);">🔐 Dashboard Admin</h2>
-    <p style="color:#666;">Dapur Mommy System</p>
-    <input type="password" id="pinInput" class="pin-input" maxlength="4" placeholder="PIN"
-      onkeydown="if(event.key==='Enter') checkLogin()">
-    <button class="login-btn" onclick="checkLogin()">Masuk Sistem</button>
+    <div class="login-card">
+      <div style="font-size: 48px; margin-bottom: 10px;">🔐</div>
+      <h2 class="login-title">Admin Panel</h2>
+      <p style="color: var(--text-sub);">Dapur Mommy System</p>
+      <input type="password" id="pinInput" class="pin-input" maxlength="4" placeholder="••••"
+        onkeydown="if(event.key==='Enter') checkLogin()">
+      <button class="login-btn" onclick="checkLogin()">Log Masuk</button>
+    </div>
   </div>
 
   <!-- 2. MAIN DASHBOARD -->
   <div id="dashboard">
     <div class="header">
-      <div>
-        <h2>Senarai Menu & Stok</h2>
-        <div style="font-size:12px; color:#666;">Kemaskini inventori anda</div>
+      <div class="header-title">
+        <h2>Dashboard Stok</h2>
+        <p>Selamat datang kembali</p>
       </div>
-      <div style="display:flex; gap:8px;">
-        <button class="btn-action btn-bulk" onclick="openBulkModal()">🔄 Kemaskini Jisim</button>
-        <button class="btn-action btn-logout" onclick="location.reload()">Log Keluar</button>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn-icon btn-danger" onclick="resetAllStocks()">🚫</button>
+        <button class="btn-icon" onclick="openBulkModal()">📝</button>
+        <button class="btn-icon" onclick="location.reload()">🚪</button>
       </div>
     </div>
 
-    <!-- STATS -->
+    <!-- STATS GRID -->
     <div class="stats-grid">
       <div class="stats-card">
+        <div class="stats-icon">🍽️</div>
         <div class="stats-num" id="totalItems">0</div>
         <div class="stats-label">Jumlah Menu</div>
       </div>
-      <div class="stats-card">
-        <div class="stats-num" id="lowStockCount" style="color:var(--danger)">0</div>
-        <div class="stats-label">Stok Rendah (<2)</div>
-        </div>
+
+      <div class="stats-card" style="color: var(--danger);">
+        <div class="stats-icon" style="color:white; background:var(--danger);">⚠️</div>
+        <div class="stats-num" id="offStockCount">0</div>
+        <div class="stats-label">Stok Habis</div>
       </div>
 
-      <!-- SEARCH -->
-      <input type="text" id="searchInput" class="search-bar" placeholder="🔍 Cari nama menu..."
+      <div class="stats-card" style="color: var(--success);">
+        <div class="stats-icon" style="color:white; background:var(--success);">✅</div>
+        <div class="stats-num" id="activeCount">0</div>
+        <div class="stats-label">Menu Aktif</div>
+      </div>
+
+      <div class="stats-card sales">
+        <div class="stats-icon" style="color:white; background:var(--money);">💰</div>
+        <div class="stats-num" id="todaySales">RM 0.00</div>
+        <div class="stats-label">Jualan</div>
+      </div>
+
+      <div class="stats-card profit">
+        <div class="stats-icon" style="color:white; background:var(--profit);">💎</div>
+        <div class="stats-num" id="todayProfit">RM 0.00</div>
+        <div class="stats-label">Untung</div>
+      </div>
+    </div>
+
+    <!-- SEARCH -->
+    <div class="search-wrapper">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" class="search-bar" placeholder="Cari nama menu..."
         oninput="renderDashboard()">
-
-      <!-- LIST -->
-      <div id="stockList"></div>
     </div>
 
-    <!-- 3. SINGLE EDIT MODAL -->
-    <div class="modal" id="editModal">
-      <div class="modal-box">
-        <h3 id="modalItemName">Nasi Goreng</h3>
-        <div style="margin-bottom:15px;">
-          Stok Semasa: <b id="modalCurrentStock" style="font-size:18px; color:var(--primary)">5</b>
-        </div>
-        <label style="display:block; text-align:left; font-size:12px; font-weight:bold;">Jumlah Baharu:</label>
-        <input type="number" id="newStockInput" class="modal-input" min="0" placeholder="0">
+    <!-- LIST -->
+    <div id="stockList"></div>
+  </div>
 
+  <!-- 3. SINGLE EDIT MODAL -->
+  <div class="modal" id="editModal">
+    <div class="modal-box">
+      <div style="font-size: 32px; margin-bottom: 10px;">📦</div>
+      <h3 id="modalItemName" style="margin: 0; color: var(--text-main);">Nasi Goreng</h3>
+      <div style="margin-bottom: 15px;">
+        Stok Semasa: <b id="modalCurrentStock" style="color: var(--primary); font-size: 18px;">5</b>
+      </div>
+      <input type="number" id="newStockInput" class="modal-input" min="0" placeholder="0">
+
+      <div class="modal-actions">
+        <button class="modal-btn btn-cancel" onclick="closeModal()">Batal</button>
+        <button class="modal-btn btn-save" onclick="saveStock()">Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. BULK UPDATE MODAL -->
+  <div class="modal" id="bulkModal">
+    <div class="modal-box">
+      <div class="bulk-header">
+        <h3>📝 Kemaskini Semua</h3>
+        <span style="cursor: pointer; font-size: 24px;" onclick="closeBulkModal()">×</span>
+      </div>
+      <div id="bulkList" class="bulk-content"></div>
+      <div class="bulk-footer">
         <div class="modal-actions">
-          <button class="modal-btn btn-cancel" onclick="closeModal()">Batal</button>
-          <button class="modal-btn btn-save" onclick="saveStock()">Simpan</button>
+          <button class="modal-btn btn-cancel" onclick="closeBulkModal()">Batal</button>
+          <button class="modal-btn btn-save" id="btnBulkSave" onclick="saveBulkStocks()">Simpan Semua</button>
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- 4. BULK UPDATE MODAL -->
-    <div class="modal" id="bulkModal">
-      <div class="modal-box">
-        <div class="bulk-header">
-          <span>📝 Kemaskini Stok Jisim</span>
-          <span style="cursor:pointer;" onclick="closeBulkModal()">✕</span>
-        </div>
-        <div id="bulkList" class="bulk-content"></div>
-        <div class="bulk-footer">
-          <div class="modal-actions">
-            <button class="modal-btn btn-cancel" onclick="closeBulkModal()">Batal</button>
-            <button class="modal-btn btn-save" id="btnBulkSave" onclick="saveBulkStocks()">Simpan Semua</button>
-          </div>
-        </div>
-      </div>
-    </div>
+  <script>
+    // --- KONFIGURASI ---
+    // PASTIKAN ANDA TAMPAL URL WEB APP DARI GOOGLE SCRIPT DI SINI
+    const API_URL = "https://script.google.com/macros/s/AKfycbyzXa2B0_o_nVQjevAEN7dCXB4CyxScPMfukUj2OWHZV9c7Y8B8lPdjpLtLt6cqOiafSQ/exec";
+    const ADMIN_PIN = "8888";
 
-    <script>
-      const API_URL = "https://script.google.com/macros/s/AKfycbymNCR6zuDguiPAldiuh2Orx5t0HmHY5cVfbvMHdiSt_VMOen8SquOIoBzFHy9jRajv8Q/exec";
-      const ADMIN_PIN = "8888";
+    let stockDataRaw = {};
+    let stockDataFlat = [];
+    let currentEditId = null;
+    let financeData = { sales: 0, profit: 0 };
 
-      let stockDataRaw = {};
-      let stockDataFlat = [];
-      let currentEditId = null;
+    // --- UTILITIES ---
+    function showToast(msg, type = 'normal') {
+      const container = document.getElementById("toastContainer");
+      const toast = document.createElement("div");
+      toast.className = `toast ${type}`;
+      toast.textContent = msg;
+      container.appendChild(toast);
+      setTimeout(() => toast.classList.add("show"), 10);
+      setTimeout(() => {
+        toast.classList.remove("show");
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
 
-      // --- UTILITIES ---
-      function showToast(msg, type = 'normal') {
-        const container = document.getElementById("toastContainer");
-        const toast = document.createElement("div");
-        toast.className = `toast ${type}`;
-        toast.textContent = msg;
-        container.appendChild(toast);
-        setTimeout(() => toast.classList.add("show"), 10);
-        setTimeout(() => {
-          toast.classList.remove("show");
-          setTimeout(() => toast.remove(), 300);
-        }, 3000);
+    function toggleLoading(show) {
+      document.getElementById("loadingOverlay").style.display = show ? "flex" : "none";
+    }
+
+    // --- LOGIN ---
+    function checkLogin() {
+      const pin = document.getElementById("pinInput").value;
+      const dashboard = document.getElementById("dashboard");
+      const login = document.getElementById("login");
+
+      if (pin === ADMIN_PIN) {
+        login.style.display = "none";
+        dashboard.style.display = "block";
+        initData();
+      } else {
+        showToast("PIN Salah!", "error");
+        document.getElementById("pinInput").value = "";
       }
+    }
 
-      function toggleLoading(show) {
-        document.getElementById("loadingOverlay").style.display = show ? "flex" : "none";
+    // --- INIT DATA ---
+    async function initData() {
+      toggleLoading(true);
+      try {
+        await fetchMenuData();
+        await fetchFinancialData();
+        renderDashboard();
+      } catch (err) {
+        console.error(err);
+        showToast("Gagal memuat data. Sila semak sambungan internet.", "error");
+        document.getElementById("stockList").innerHTML = `<p style="text-align:center; color:var(--danger); padding:20px;">Ralat Memuatkan Data.<br>Sila semak sambungan internet atau URL API.</p>`;
+      } finally {
+        toggleLoading(false);
       }
+    }
 
-      // --- LOGIN ---
-      function checkLogin() {
-        if (document.getElementById("pinInput").value === ADMIN_PIN) {
-          document.getElementById("login").style.display = "none";
-          document.getElementById("dashboard").style.display = "block";
-          fetchStockData();
-        } else {
-          showToast("PIN Salah!", "error");
-          document.getElementById("pinInput").value = "";
+    async function fetchMenuData() {
+      const res = await fetch(API_URL + "?action=all_menu");
+      const json = await res.json();
+      if (!json.status) throw new Error(json.msg || "Gagal memuat menu");
+
+      stockDataRaw = json.data;
+      const flat = [];
+      Object.keys(json.data).forEach(cat => {
+        json.data[cat].forEach(m => flat.push(m));
+      });
+      stockDataFlat = flat;
+    }
+
+    async function fetchFinancialData() {
+      try {
+        const res = await fetch(API_URL + "?action=financial");
+        const json = await res.json();
+        if (json.status) {
+          financeData.sales = json.data.sales || 0;
+          financeData.profit = json.data.profit || 0;
         }
+      } catch (e) {
+        console.warn("Gagal memuat kewangan (mungkin endpoint belum siap).");
       }
+    }
 
-      // --- DATA ---
-      function fetchStockData() {
-        toggleLoading(true);
-        fetch(API_URL + "?action=all_menu")
-          .then(r => r.json())
-          .then(res => {
-            if (!res.status) throw new Error(res.msg || "Gagal memuat data");
-            stockDataRaw = res.data;
+    // --- RENDER ---
+    function renderDashboard() {
+      const container = document.getElementById("stockList");
+      const search = document.getElementById("searchInput").value.toLowerCase();
+      container.innerHTML = "";
 
-            const flat = [];
-            Object.keys(res.data).forEach(cat => {
-              res.data[cat].forEach(m => flat.push(m));
-            });
-            stockDataFlat = flat;
-            renderDashboard();
-          })
-          .catch(err => {
-            console.error(err);
-            showToast("Ralat memuat data", "error");
-          })
-          .finally(() => toggleLoading(false));
-      }
+      // Pengiraan statistik menggunakan stockDataFlat
+      let total = stockDataFlat.length;
+      let outOfStock = stockDataFlat.filter(i => i.stok == 0).length;
+      let active = stockDataFlat.filter(i => i.status === "AKTIF").length;
 
-      // --- RENDER ---
-      function renderDashboard() {
-        const container = document.getElementById("stockList");
-        const search = document.getElementById("searchInput").value.toLowerCase();
-        container.innerHTML = "";
+      document.getElementById("totalItems").innerText = total;
+      document.getElementById("offStockCount").innerText = outOfStock;
+      document.getElementById("activeCount").innerText = active;
 
-        let total = stockDataFlat.length;
-        let low = stockDataFlat.filter(i => i.stok <= 10).length;
-        document.getElementById("totalItems").innerText = total;
-        document.getElementById("lowStockCount").innerText = low;
+      document.getElementById("todaySales").innerText = "RM " + financeData.sales.toFixed(2);
+      document.getElementById("todayProfit").innerText = "RM " + financeData.profit.toFixed(2);
 
-        Object.keys(stockDataRaw).forEach(cat => {
-          const items = stockDataRaw[cat];
-          const filteredItems = items.filter(i => i.menu.toLowerCase().includes(search));
+      Object.keys(stockDataRaw).forEach((cat, index) => {
+        const items = stockDataRaw[cat];
+        const filteredItems = items.filter(i => i.menu.toLowerCase().includes(search));
 
-          if (filteredItems.length > 0) {
-            const wrapper = document.createElement("div");
-            wrapper.className = "cat-wrapper";
+        if (filteredItems.length > 0) {
+          const wrapper = document.createElement("div");
+          wrapper.className = "cat-wrapper";
+          wrapper.style.animationDelay = `${index * 0.05}s`;
 
-            const isSearching = search.length > 0;
-            const bodyClass = isSearching ? "open" : "";
-            const arrowIcon = isSearching ? "▼" : "▶";
+          const isSearching = search.length > 0;
+          const bodyClass = isSearching ? "open" : "";
 
-            const header = document.createElement("div");
-            header.className = "cat-header";
-            header.innerHTML = `
-            <span>${cat} <span style="font-size:0.8em; opacity:0.8;">(${filteredItems.length})</span></span>
-            <span class="cat-arrow ${bodyClass === '' ? 'closed' : ''}">${arrowIcon}</span>
+          const header = document.createElement("div");
+          header.className = "cat-header";
+          header.innerHTML = `
+            <span>${cat} <span style="font-size:11px; color:var(--text-sub); background:#f3f4f6; padding:2px 8px; border-radius:10px;">${filteredItems.length}</span></span>
+            <span class="cat-arrow ${bodyClass === '' ? 'closed' : ''}">▼</span>
           `;
-            wrapper.appendChild(header);
-            const arrowSpan = header.querySelector('.cat-arrow');
+          wrapper.appendChild(header);
+          const arrowSpan = header.querySelector('.cat-arrow');
 
-            const bodyDiv = document.createElement("div");
-            bodyDiv.className = `cat-body ${bodyClass}`;
+          const bodyDiv = document.createElement("div");
+          bodyDiv.className = `cat-body ${bodyClass}`;
 
-            filteredItems.forEach(item => {
-              const isActive = item.status === "AKTIF";
-              const isLow = item.stok <= 10;
+          filteredItems.forEach(item => {
+            const isActive = item.status === "AKTIF";
+            const isLow = item.stok <= 10;
 
-              let cardClass = "stock-card";
-              if (!isActive) cardClass += " off-stock";
-              else if (isLow) cardClass += " low-stock";
-              else cardClass += " good-stock";
+            const el = document.createElement("div");
+            el.className = "stock-card";
 
-              const el = document.createElement("div");
-              el.className = cardClass;
+            // TAMBAHAN BAIK: Tukar teks butang toggle kepada INFO jika stok habis
+            const toggleBtnClass = isActive ? "btn-toggle on" : "btn-toggle off";
+            const toggleBtnText = isActive ? "MATIKAN" : "HIDUPKAN";
+            const isDisabled = (!isActive && item.stok == 0) ? "disabled" : "";
+            const disabledAttr = (!isActive && item.stok == 0) ? "disabled" : "";
 
-              // Butang Toggle Style
-              const toggleBtnClass = isActive ? "btn-toggle on" : "btn-toggle off";
-              const toggleBtnText = isActive ? "MATIKAN" : "HIDUPKAN";
-
-              el.innerHTML = `
+            el.innerHTML = `
               <div class="stock-info">
                 <h4>${item.menu}</h4>
-                <p>Harga: RM${Number(item.harga).toFixed(2)}</p>
-                <div style="margin-top:6px;">
-                  <span class="badge ${isActive ? (isLow ? 'badge-low' : 'badge-good') : 'badge-off'}">
-                    ${item.status}
-                  </span>
-                  <span class="badge ${isLow ? 'badge-low' : 'badge-good'}" style="margin-left:5px;">
-                    Stok: ${item.stok}
-                  </span>
-                  ${isLow && isActive ? '<span style="color:red; font-size:10px; margin-left:5px; font-weight:bold;">(Kritikal)</span>' : ''}
+                <p>RM ${Number(item.harga).toFixed(2)}</p>
+                <div class="badges">
+                  <span class="badge ${isActive ? 'badge-active' : 'badge-off'}">${item.status}</span>
+                  <span class="badge ${isLow ? 'badge-low' : 'badge-good'}">Stok: ${item.stok}</span>
                 </div>
               </div>
-              <div class="item-controls">
-                <button class="btn-edit" onclick="openEdit('${item.id}', '${item.menu.replace(/'/g, "\\'")}', ${item.stok})">Edit Stok</button>
-                <button class="${toggleBtnClass}" onclick="toggleItemStatus('${item.id}')">${toggleBtnText}</button>
-              </div>
-            `;
-              bodyDiv.appendChild(el);
-            });
+              <div class="controls">
+                <button class="btn-edit" onclick="openEdit('${item.id}', '${item.menu.replace(/'/g, "\\'")}', ${item.stok})">✏️</button>
+                <button class="${toggleBtnClass} ${isDisabled}" ${disabledAttr} onclick="toggleItemStatus('${item.id}')">${toggleBtnText}</button>
+              </div>`;
+            bodyDiv.appendChild(el);
+          });
 
-            wrapper.appendChild(bodyDiv);
-            container.appendChild(wrapper);
+          wrapper.appendChild(bodyDiv);
+          container.appendChild(wrapper);
 
-            header.onclick = () => toggleCategory(bodyDiv, arrowSpan);
-          }
-        });
-      }
-
-      function toggleCategory(bodyDiv, arrowSpan) {
-        if (bodyDiv.style.display === "none" || bodyDiv.style.display === "") {
-          bodyDiv.style.display = "block";
-          arrowSpan.style.transform = "rotate(0deg)";
-        } else {
-          bodyDiv.style.display = "none";
-          arrowSpan.style.transform = "rotate(-90deg)";
+          header.onclick = () => toggleCategory(bodyDiv, arrowSpan);
         }
+      });
+    }
+
+    function toggleCategory(bodyDiv, arrowSpan) {
+      // Logic pembukaan/penutupan kategori
+      if (bodyDiv.style.display === "none" || bodyDiv.style.display === "") {
+        bodyDiv.style.display = "block";
+        arrowSpan.classList.remove('closed');
+        arrowSpan.style.transform = "rotate(0deg)";
+      } else {
+        bodyDiv.style.display = "none";
+        arrowSpan.classList.add('closed');
+        arrowSpan.style.transform = "rotate(-90deg)";
       }
+    }
 
-      // --- SINGLE EDIT ---
-      function openEdit(id, name, currentStock) {
-        currentEditId = id;
-        document.getElementById("modalItemName").innerText = name;
-        document.getElementById("modalCurrentStock").innerText = currentStock;
-        document.getElementById("newStockInput").value = currentStock;
-        document.getElementById("editModal").style.display = "flex";
-        document.getElementById("newStockInput").focus();
-      }
+    // --- FUNGSI RESET STOK ---
+    function resetAllStocks() {
+      if (!confirm("⚠️ AMARAN!\n\nAdakah anda pasti mahu menjadikan SEMUA stok kepada 0?\nTindakan ini tidak boleh diundur.")) return;
 
-      function closeModal() {
-        document.getElementById("editModal").style.display = "none";
-      }
+      toggleLoading(true);
 
-      function saveStock() {
-        const newQty = document.getElementById("newStockInput").value;
-        if (newQty === "" || newQty < 0) return showToast("Sila masukkan jumlah yang sah.", "error");
-
-        toggleLoading(true);
-        closeModal();
-
-        fetch(API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain" },
-          body: JSON.stringify({
-            action: "set_stock_total",
-            id: currentEditId,
-            newStock: newQty
-          })
+      fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify({ action: "reset_stocks" })
+      })
+        .then(r => r.json())
+        .then(res => {
+          if (res.status) {
+            showToast("Semua stok telah dikosongkan.", "success");
+            fetchMenuData();
+          } else {
+            showToast("Gagal: " + res.msg, "error");
+          }
         })
-          .then(r => r.json())
-          .then(res => {
-            if (res.status) {
-              showToast(res.data.message || "Stok berjaya dikemaskini", "success");
-              fetchStockData();
-            } else {
-              showToast("Gagal: " + res.msg, "error");
-            }
-          })
-          .finally(() => toggleLoading(false));
-      }
-
-      // --- TOGGLE STATUS ---
-      function toggleItemStatus(id) {
-        if (!confirm("Adakah anda pasti mahu menukar status item ini?")) return;
-
-        toggleLoading(true);
-
-        fetch(API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain" },
-          body: JSON.stringify({
-            action: "toggle_status",
-            id: id
-          })
+        .catch(err => {
+          showToast("Ralat menyambung ke server.", "error");
+          console.error(err);
         })
-          .then(r => r.json())
-          .then(res => {
-            if (res.status) {
-              showToast(res.data.message, "success");
-              fetchStockData();
-            } else {
-              showToast("Gagal: " + res.msg, "error");
-            }
-          })
-          .finally(() => toggleLoading(false));
-      }
+        .finally(() => {
+          toggleLoading(false);
+        });
+    }
 
-      // --- BULK EDIT ---
-      function openBulkModal() {
-        document.getElementById("bulkModal").style.display = "flex";
-        renderBulkList();
-      }
+    // --- SINGLE EDIT ---
+    function openEdit(id, name, currentStock) {
+      currentEditId = id;
+      document.getElementById("modalItemName").innerText = name;
+      document.getElementById("modalCurrentStock").innerText = currentStock;
+      document.getElementById("newStockInput").value = currentStock;
+      document.getElementById("editModal").style.display = "flex";
+      document.getElementById("newStockInput").focus();
+    }
 
-      function closeBulkModal() {
-        document.getElementById("bulkModal").style.display = "none";
-      }
+    function closeModal() {
+      document.getElementById("editModal").style.display = "none";
+    }
 
-      function renderBulkList() {
-        const container = document.getElementById("bulkList");
-        container.innerHTML = "";
+    function saveStock() {
+      const newQty = document.getElementById("newStockInput").value;
+      if (newQty === "" || newQty < 0) return showToast("Sila masukkan jumlah yang sah.", "error");
 
-        Object.keys(stockDataRaw).forEach(cat => {
-          const header = document.createElement("div");
-          header.style.cssText = "background:#eee; color:#555; padding:8px 10px; margin-top:10px; font-weight:bold; border-radius:4px; font-size:12px;";
-          header.innerText = cat.toUpperCase();
-          container.appendChild(header);
+      toggleLoading(true);
+      closeModal();
 
-          stockDataRaw[cat].forEach(item => {
-            const row = document.createElement("div");
-            row.className = "bulk-row";
-            row.innerHTML = `
+      fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify({
+          action: "set_stock_total",
+          id: currentEditId,
+          newStock: newQty
+        })
+      })
+        .then(r => r.json())
+        .then(res => {
+          if (res.status) {
+            showToast("Stok berjaya dikemaskini", "success");
+            fetchMenuData();
+          } else {
+            showToast("Gagal: " + res.msg, "error");
+          }
+        })
+        .catch(err => {
+          showToast("Ralat menyimpan stok.", "error");
+        })
+        .finally(() => {
+          toggleLoading(false);
+        });
+    }
+
+    // --- TOGGLE STATUS ---
+    function toggleItemStatus(id) {
+      if (!confirm("Adakah anda pasti mahu menukar status item ini?\n\n(PENTING: Status dikawal oleh Formula di Google Sheet)")) return;
+
+      toggleLoading(true);
+
+      fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify({
+          action: "toggle_status",
+          id: id
+        })
+      })
+        .then(r => r.json())
+        .then(res => {
+          if (res.status) {
+            showToast("Status berjaya ditukar", "success");
+            fetchMenuData();
+          } else {
+            // TAMBAHAN BAIK: Tukar mesej error kepada maklumat (info)
+            showToast(res.msg || "Status dikawal oleh Formula.", "info");
+          }
+        })
+        .catch(err => {
+          showToast("Ralat menukar status.", "error");
+        })
+        .finally(() => {
+          toggleLoading(false);
+        });
+    }
+
+    // --- BULK EDIT ---
+    function openBulkModal() {
+      document.getElementById("bulkModal").style.display = "flex";
+      renderBulkList();
+    }
+
+    function closeBulkModal() {
+      document.getElementById("bulkModal").style.display = "none";
+    }
+
+    function renderBulkList() {
+      const container = document.getElementById("bulkList");
+      container.innerHTML = "";
+
+      Object.keys(stockDataRaw).forEach(cat => {
+        const header = document.createElement("div");
+        header.style.cssText = "font-size:11px; color: var(--text-sub); font-weight: 700; margin-bottom: 8px; text-transform: uppercase;";
+        header.innerText = cat;
+        container.appendChild(header);
+
+        stockDataRaw[cat].forEach(item => {
+          const row = document.createElement("div");
+          row.className = "bulk-row";
+          row.innerHTML = `
             <span class="bulk-name">${item.menu}</span>
             <input type="number" class="bulk-input" id="bulk-${item.id}" value="${item.stok}" min="0">
           `;
-            container.appendChild(row);
-          });
+          container.appendChild(row);
         });
-      }
+      });
+    }
 
-      function saveBulkStocks() {
-        const btn = document.getElementById("btnBulkSave");
-        const inputs = document.querySelectorAll('.bulk-input');
+    function saveBulkStocks() {
+      const btn = document.getElementById("btnBulkSave");
+      const inputs = document.querySelectorAll('.bulk-input');
 
-        const itemsToUpdate = [];
-        inputs.forEach(input => {
-          const id = input.id.replace('bulk-', '');
-          const newStock = Number(input.value);
-          itemsToUpdate.push({ id: id, newStock: newStock });
-        });
+      const itemsToUpdate = [];
+      inputs.forEach(input => {
+        const id = input.id.replace('bulk-', '');
+        const newStock = Number(input.value);
+        itemsToUpdate.push({ id: id, newStock: newStock });
+      });
 
-        if (itemsToUpdate.length === 0) return;
+      if (itemsToUpdate.length === 0) return;
 
-        btn.innerText = "Sedang Simpan...";
-        btn.disabled = true;
+      btn.innerHTML = `<span class="spin-small" style="animation-play-state: running;"></span> Sedang Simpan...`;
+      btn.disabled = true;
 
-        fetch(API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain" },
-          body: JSON.stringify({
-            action: "bulk_update_stocks",
-            items: itemsToUpdate
-          })
+      fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify({
+          action: "bulk_update_stocks",
+          items: itemsToUpdate
         })
-          .then(r => r.json())
-          .then(res => {
-            if (res.status) {
-              showToast("Semua stok berjaya dikemaskini!", "success");
-              closeBulkModal();
-              fetchStockData();
-            } else {
-              showToast("Gagal: " + res.msg, "error");
-            }
-          })
-          .catch(err => showToast("Ralat sistem", "error"))
-          .finally(() => {
-            btn.innerText = "Simpan Semua";
-            btn.disabled = false;
-          });
-      }
-    </script>
+      })
+        .then(r => r.json())
+        .then(res => {
+          if (res.status) {
+            showToast("Semua stok berjaya dikemaskini!", "success");
+            closeBulkModal();
+            fetchMenuData();
+          } else {
+            showToast("Gagal: " + res.msg, "error");
+          }
+        })
+        .catch(err => {
+          showToast("Ralat sistem", "error");
+        })
+        .finally(() => {
+          btn.innerHTML = "Simpan Semua";
+          btn.disabled = false;
+        });
+    }
+  </script>
 </body>
 
 </html>
